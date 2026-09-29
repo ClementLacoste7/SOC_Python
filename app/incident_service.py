@@ -54,3 +54,14 @@ def close_incident(session: Session, user: User, incident_id: int, data: Inciden
     incident.conclusion = data.conclusion
     incident.closed_at = utc_now()
     return incident_repository.save_incident(session, incident)
+
+
+def build_summary(session: Session) -> dict:
+    # Every state and severity is listed, even with a count of zero
+    incidents = incident_repository.list_incidents(session)
+    by_state = {state.value: 0 for state in IncidentState}
+    by_severity = {severity.value: 0 for severity in Severity}
+    for incident in incidents:
+        by_state[incident.state] += 1
+        by_severity[incident.severity] += 1
+    return {"total": len(incidents), "par_etat": by_state, "par_gravite": by_severity}
