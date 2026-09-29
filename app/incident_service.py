@@ -1,9 +1,9 @@
 from sqlmodel import Session
 
 from app import incident_repository
-from app.errors import ForbiddenError, NotFoundError
-from app.models import Incident, User
-from app.schemas import IncidentCreate, IncidentState, Role, Severity
+from app.errors import ConflictError, ForbiddenError, NotFoundError
+from app.models import Incident, User, utc_now
+from app.schemas import IncidentClose, IncidentCreate, IncidentState, Role, Severity
 
 
 def create_incident(session: Session, user: User, data: IncidentCreate) -> Incident:
@@ -31,3 +31,26 @@ def list_incidents_for_user(
     # A reporter only sees their own incidents, an analyst sees all of them
     author_id = None if user.role == Role.ANALYST else user.id
     return incident_repository.list_incidents(session, author_id, state, severity)
+
+
+def start_incident(session: Session, user: User, incident_id: int) -> Incident:
+    if user.role != Role.ANALYST:
+        raise ForbiddenError("Only an analyst can start an incident")
+    incident = get_incident_for_user(session, user, incident_id)
+    if incident.state != IncidentState.NEW:
+        raise ConflictError("Only a new incident can be started")
+    incident.state = IncidentState.IN_PROGRESS
+    return incident_repository.save_incident(session, incident)
+
+
+def close_incident(session: Session, user: User, incident_id: int, data: IncidentClose) -> Incident:
+    if user.role != Role.ANALYST:
+        raise ForbiddenError("Only an analyst can close an incident")
+    incident = get_incident_for_user(session, user, incident_id)
+    # Closing straight from "nouveau" is refused
+    if incident.state != IncidentState.IN_PROGRESS:
+        raise ConflictError("Only an incident in progress can be closed")
+    incident.state = IncidentState.CLOSED
+    incident.conclusion = data.conclusion
+    incident.closed_at = utc_now()
+    return incident_repository.save_incident(session, incident)
