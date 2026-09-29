@@ -24,6 +24,11 @@ class Category(StrEnum):
     OTHER = "autre"
 
 
+class Role(StrEnum):
+    REPORTER = "declarant"
+    ANALYST = "analyste"
+
+
 # Strip spaces so "   " is rejected like an empty string
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 LongText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
