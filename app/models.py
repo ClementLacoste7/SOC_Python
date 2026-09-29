@@ -9,6 +9,14 @@ def utc_now() -> datetime:
     return datetime.now(UTC)
 
 
+class User(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    username: str = Field(unique=True, index=True, max_length=50)
+    hashed_password: str
+    # Role value stored as plain text, like the incident enums
+    role: str
+
+
 class Incident(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     title: str = Field(max_length=200)
