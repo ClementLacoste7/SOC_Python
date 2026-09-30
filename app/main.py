@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from app.config import settings
 from app.database import create_db_and_tables
 from app.errors import DomainError
-from app.routes import auth
+from app.routes import auth, incidents
 
 logging.basicConfig(
     level=settings.log_level, format="%(asctime)s %(levelname)s %(name)s %(message)s"
@@ -32,3 +32,4 @@ def handle_domain_error(request: Request, exc: DomainError) -> JSONResponse:
 
 
 app.include_router(auth.router)
+app.include_router(incidents.router)
