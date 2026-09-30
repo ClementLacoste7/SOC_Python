@@ -1,4 +1,4 @@
-from sqlmodel import Session, select
+from sqlmodel import Session, delete, select
 
 from app.models import User
 
@@ -12,3 +12,12 @@ def save_user(session: Session, user: User) -> User:
     session.commit()
     session.refresh(user)
     return user
+
+
+def list_users(session: Session) -> list[User]:
+    return list(session.exec(select(User)).all())
+
+
+def delete_all_users(session: Session) -> None:
+    session.exec(delete(User))
+    session.commit()
