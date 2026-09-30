@@ -1,4 +1,4 @@
-from sqlmodel import Session, select
+from sqlmodel import Session, delete, select
 
 from app.models import Incident
 
@@ -29,3 +29,8 @@ def list_incidents(
     if severity is not None:
         query = query.where(Incident.severity == severity)
     return list(session.exec(query.order_by(Incident.id)).all())
+
+
+def delete_all_incidents(session: Session) -> None:
+    session.exec(delete(Incident))
+    session.commit()
