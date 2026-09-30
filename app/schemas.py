@@ -63,3 +63,8 @@ class IncidentRead(BaseModel):
     created_at: datetime
     closed_at: datetime | None
     conclusion: str | None
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
