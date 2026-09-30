@@ -5,9 +5,11 @@ os.environ["DATABASE_URL"] = "sqlite:///./test_incidents.db"
 os.environ["SECRET_KEY"] = "test-key-only-for-pytest-0123456789abcdef"
 
 import pytest
+from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel
 
 from app.database import engine
+from app.main import app
 from app.models import User
 from app.schemas import Role
 from app.security import hash_password
@@ -47,3 +49,30 @@ def reporter_b(session):
 @pytest.fixture
 def analyst(session):
     return add_user(session, "carol", Role.ANALYST)
+
+
+@pytest.fixture
+def client(session):
+    with TestClient(app) as client:
+        yield client
+
+
+def auth_headers(client: TestClient, user: User) -> dict:
+    # Real login through POST /token, like a normal client
+    response = client.post("/token", data={"username": user.username, "password": TEST_PASSWORD})
+    return {"Authorization": f"Bearer {response.json()['access_token']}"}
+
+
+@pytest.fixture
+def headers_a(client, reporter_a):
+    return auth_headers(client, reporter_a)
+
+
+@pytest.fixture
+def headers_b(client, reporter_b):
+    return auth_headers(client, reporter_b)
+
+
+@pytest.fixture
+def headers_analyst(client, analyst):
+    return auth_headers(client, analyst)
