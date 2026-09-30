@@ -1,3 +1,5 @@
+import logging
+
 from sqlmodel import Session
 
 from app import incident_repository
@@ -5,11 +7,15 @@ from app.errors import ConflictError, ForbiddenError, NotFoundError
 from app.models import Incident, User, utc_now
 from app.schemas import IncidentClose, IncidentCreate, IncidentState, Role, Severity
 
+logger = logging.getLogger(__name__)
+
 
 def create_incident(session: Session, user: User, data: IncidentCreate) -> Incident:
     # Author and state come from the server, never from the client
     incident = Incident(**data.model_dump(), author_id=user.id)
-    return incident_repository.save_incident(session, incident)
+    incident = incident_repository.save_incident(session, incident)
+    logger.info("Incident %d created by %r", incident.id, user.username)
+    return incident
 
 
 def get_incident_for_user(session: Session, user: User, incident_id: int) -> Incident:
@@ -40,6 +46,7 @@ def start_incident(session: Session, user: User, incident_id: int) -> Incident:
     if incident.state != IncidentState.NEW:
         raise ConflictError("Only a new incident can be started")
     incident.state = IncidentState.IN_PROGRESS
+    logger.info("Incident %d started by %r", incident.id, user.username)
     return incident_repository.save_incident(session, incident)
 
 
@@ -53,6 +60,7 @@ def close_incident(session: Session, user: User, incident_id: int, data: Inciden
     incident.state = IncidentState.CLOSED
     incident.conclusion = data.conclusion
     incident.closed_at = utc_now()
+    logger.info("Incident %d closed by %r", incident.id, user.username)
     return incident_repository.save_incident(session, incident)
 
 
